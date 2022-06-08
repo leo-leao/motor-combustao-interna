@@ -2,19 +2,18 @@
 #   - Leonardo Rossi Leão
 #   - Matheus Meirelles Onofre Martins
 
+from tabulate import tabulate
+
 # %%      Dados base para cálculos
 
-from unittest import result
-
-
 referencia = {
-    "potencia efetiva": 102,        # HP
+    "potencia_efetiva": 102,        # HP
     "torque": 137                   # N*m
 }
 
 PCI = {
-    "gasolina": 43.54,              # MJ/kg
-    "etanol": 28.26                 # MJ/kg
+    "gasolina": 10.4*4.1868,              # MJ/kg
+    "etanol": 6.75*4.1868                 # MJ/kg
 }
 
 num_cilindros = 4
@@ -24,7 +23,7 @@ tempo = 4
 x = 2
 taxa_compressao = 9.4
 rotacao = 5200
-cilindrada = (3.1418*(diametro**2)*curso)*rotacao/4
+cilindrada = (3.1418*(diametro**2)*curso)*num_cilindros/4
 
 fuel = {"tipo": "gasolina", "alfa": 0.9}
 h2_co = 0.45
@@ -58,7 +57,7 @@ comb_coef["CO2"] = fuel["substancia"]["C"] - comb_coef["CO"]
 
 comb_coef["produtos"] = (comb_coef["N2"] + comb_coef["CO2"] + comb_coef["CO"] + comb_coef["H2O"] + comb_coef["H2"])/fuel["peso"]    
 comb_coef["reagentes"] = (comb_coef["fuel"] + comb_coef["O2"] + comb_coef["N2"])/fuel["peso"]
-comb_coef["ar"] =  (comb_coef["O2"] + comb_coef["N2"])/fuel["peso"]
+comb_coef["ar"] = (comb_coef["O2"] + comb_coef["N2"])/fuel["peso"]
 
 
 # %%        Passo 1: Admissao
@@ -79,7 +78,7 @@ resultados = {"p1": admissao["pamb"]*admissao["pdc"]}
 resultados["efe"] = ((admissao["Tamb"] + admissao["deltaT"])/admissao["tres"])*(admissao["pres"]/(admissao["epson"]*resultados["p1"] - admissao["pres"]))
 resultados["nres"] = comb_coef["reagentes"]*resultados["efe"]
 resultados["t1"]  = (admissao["Tamb"] + admissao["deltaT"] + resultados["efe"]*admissao["tres"])/(1 + resultados["efe"])
-resultados["rendVol"] = (resultados["p1"]/admissao["pamb"])*(admissao["epson"]/(admissao["epson"]-1))*(admissao["Tamb"]/(resultados["t1"]*(1+resultados["efe"])))
+resultados["rendimento_vol"] = (resultados["p1"]/admissao["pamb"])*(admissao["epson"]/(admissao["epson"]-1))*(admissao["Tamb"]/(resultados["t1"]*(1+resultados["efe"])))
 
 
 # %%        Passo 3: Compressao
@@ -186,8 +185,7 @@ resultados["pma"] = {
 
 # %%        Passo 8: Potencia efetiva
 
-Wi = (curso*resultados["seg_cor"]*rotacao)/(0.6*x)
-
+Wi = (cilindrada*resultados["seg_cor"]*rotacao)/(0.6*x)
 arques = (resultados["seg_cor"]-resultados["pma"]["arques"])*cilindrada*rotacao/(0.6*x)
 abnt = (resultados["seg_cor"]-resultados["pma"]["abnt"])*cilindrada*rotacao/(0.6*x)
 khovakh = (resultados["seg_cor"]-resultados["pma"]["khovakh"])*cilindrada*rotacao/(0.6*x)
@@ -199,7 +197,7 @@ resultados["potencia_efetiva"] = {
 }
 
 # Calculados a partir do ajuste derivado de Arques
-resultados["T"] = 1000*100*(resultados["seg_cor"]-resultados["pma"]["arques"])*(diametro**2)/8*curso*num_cilindros/x
+resultados["torque"] = 1000*100*(resultados["seg_cor"]-resultados["pma"]["arques"])*(diametro**2)/8*curso*num_cilindros/x
 resultados["rendimento_mec"] = (resultados["seg_cor"]-resultados["pma"]["arques"])/resultados["seg_cor"]
 
 # %%        Passo 9: Trabalho indicado por ciclo, por kg de combustivel
@@ -210,5 +208,22 @@ V2 = V1/taxa_compressao
 pmi = resultados["seg_cor"]*100
 
 resultados["Wi"] = pmi*(V1-V2)/1000
+resultados["rendimento_ind"] = resultados["Wi"]/combustao["pci"]
+resultados["rendimento_ter"] = resultados["rendimento_vol"] * resultados["rendimento_mec"] * resultados["rendimento_ind"]
+resultados["cc"] = resultados["potencia_efetiva"]["arques"]/combustao["pci"]/resultados["rendimento_ter"]
+resultados["cec"] = resultados["cc"]*3600/resultados["potencia_efetiva"]["arques"]
+
+# %%        Resultados Finais
 
 print(resultados)
+
+ref_pe = referencia["potencia_efetiva"]
+res_pe = resultados["potencia_efetiva"]["arques"]/0.7351    # Em HP
+
+ref_tq = referencia["torque"]
+res_tq = resultados["torque"]
+
+table = [["", "Referência", "Resultado", "Desvio"], 
+         ["WE [HP]", ref_pe, res_pe, (res_pe-ref_pe)*100/ref_pe],
+         ["Torque [N*m]", ref_tq, res_tq, (res_tq-ref_tq)*100/ref_tq]]
+print("\n" + tabulate(table, headers='firstrow'))
