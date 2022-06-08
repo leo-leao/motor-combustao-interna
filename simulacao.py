@@ -4,6 +4,9 @@
 
 # %%      Dados base para cálculos
 
+from unittest import result
+
+
 referencia = {
     "potencia efetiva": 102,        # HP
     "torque": 137                   # N*m
@@ -18,7 +21,10 @@ num_cilindros = 4
 diametro = 0.0805                   # m
 curso = 0.0882                      # m
 tempo = 4
+x = 2
 taxa_compressao = 9.4
+rotacao = 5200
+cilindrada = (3.1418*(diametro**2)*curso)*rotacao/4
 
 fuel = {"tipo": "gasolina", "alfa": 0.9}
 h2_co = 0.45
@@ -29,8 +35,6 @@ if fuel["tipo"] == "gasolina":
 elif fuel["tipo"] == "etanol":
     fuel["substancia"] = {"C": 2, "H": 6, "O": 1}
     fuel["peso"] = 46
-
-
 
 # %%        Passo 1
 
@@ -137,3 +141,74 @@ combustao["ei"]["gases"] = (ei["CO2"]*comb_coef["CO2"] + ei["CO"]*comb_coef["CO"
 combustao["ei"]["ar"] = (ei["O2"] + 3.76*ei["N2"])/4.76
 
 delta_u3 = u3 - combustao["ei"]["gases"]
+
+# %%        Passo 5: Expansao
+
+expansao = {"expo": 1.23}       # Varia de 1.23 a 1.30
+expansao["tx_compr"] = taxa_compressao
+
+resultados["p4"] = resultados["p3"]*(1/expansao["tx_compr"]**expansao["expo"])
+resultados["t4"] = resultados["t3"]*(1/expansao["tx_compr"]**(expansao["expo"]-1))
+
+# %%        Passo 6: Pressao media indicada [bar]
+
+passo6 = {
+    "fii": 0.97,                # Varia de 0.92 a 0.97
+    "fii_gas": 0.75             # Varia de 0.75 a 0.90
+}
+
+fator_1 = resultados["p1"]*(admissao["epson"]**compressao["expo"])/(admissao["epson"]-1)
+fator_2 = (Lambda/(expansao["expo"]-1))*(1-(1/(admissao["epson"]**(expansao["expo"]-1))))
+fator_3 = (1/(compressao["expo"]-1))*(1-(1/admissao["epson"]**(compressao["expo"]-1)))
+
+resultados["pmi"] = fator_1*(fator_2 - fator_3)
+resultados["prim_cor"] = resultados["pmi"]*passo6["fii"]
+resultados["delpgas"] = passo6["fii_gas"]*(admissao["pres"]-resultados["p1"])
+resultados["seg_cor"] = resultados["prim_cor"] - resultados["delpgas"]
+
+# %%       Passo 7: Pressao media de atrito
+
+arques = (0.5 + 0.18*(rotacao/1000) + 0.02*((rotacao/1000)**2))
+
+aux1 = 16.3761 + 2.28629*((rotacao/1000)) + 0.297053*(rotacao/1000)**2
+aux2 = 0.01*(5.44659 - 0.02495*(rotacao/1000) - 0.174376*(rotacao/1000)**2)
+abnt = (6.89*aux1 - aux2*resultados["seg_cor"])/((1 - aux2)*100)
+
+aux1 = 0.05
+aux2 = 0.0155
+khovakh = (aux1+(aux2*2*rotacao*curso/60))*10
+
+resultados["pma"] = {
+    "arques": arques,
+    "abnt": abnt,
+    "khovakh": khovakh
+}
+
+# %%        Passo 8: Potencia efetiva
+
+Wi = (curso*resultados["seg_cor"]*rotacao)/(0.6*x)
+
+arques = (resultados["seg_cor"]-resultados["pma"]["arques"])*cilindrada*rotacao/(0.6*x)
+abnt = (resultados["seg_cor"]-resultados["pma"]["abnt"])*cilindrada*rotacao/(0.6*x)
+khovakh = (resultados["seg_cor"]-resultados["pma"]["khovakh"])*cilindrada*rotacao/(0.6*x)
+
+resultados["potencia_efetiva"] = {
+    "arques": arques,
+    "abnt": abnt,
+    "khovakh": khovakh
+}
+
+# Calculados a partir do ajuste derivado de Arques
+resultados["T"] = 1000*100*(resultados["seg_cor"]-resultados["pma"]["arques"])*(diametro**2)/8*curso*num_cilindros/x
+resultados["rendimento_mec"] = (resultados["seg_cor"]-resultados["pma"]["arques"])/resultados["seg_cor"]
+
+# %%        Passo 9: Trabalho indicado por ciclo, por kg de combustivel
+
+R = 8.314
+V1 = comb_coef["reagentes"]*R*resultados["t1"]/(resultados["p1"]*100)
+V2 = V1/taxa_compressao
+pmi = resultados["seg_cor"]*100
+
+resultados["Wi"] = pmi*(V1-V2)/1000
+
+print(resultados)
