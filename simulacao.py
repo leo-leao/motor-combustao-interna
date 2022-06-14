@@ -7,8 +7,8 @@ from tabulate import tabulate
 # %%      Dados base para cálculos
 
 referencia = {
-    "potencia_efetiva": 102,        # HP
-    "torque": 137                   # N*m
+    "potencia_efetiva": 123,        # HP
+    "torque": 173                   # N*m
 }
 
 PCI = {
@@ -17,13 +17,13 @@ PCI = {
 }
 
 num_cilindros = 4
-diametro = 0.0805                   # m
-curso = 0.0882                      # m
+diametro = 0.0810                   # m
+curso = 0.0864                      # m
 tempo = 4
 x = 2
-taxa_compressao = 9.4
-rotacao = 5200
-cilindrada = (3.1418*(diametro**2)*curso)*num_cilindros/4
+taxa_compressao = 10.3
+rotacao = 5800
+cilindrada = 1800*1e-6
 
 fuel = {"tipo": "gasolina", "alfa": 0.9}
 h2_co = 0.45
