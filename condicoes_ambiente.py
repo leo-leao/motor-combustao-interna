@@ -8,7 +8,12 @@ import numpy as np
 
 # Audi A4 1.8
 
-def simulacao(params, op="", printTable=0):
+def simulacao(op="", printTable=0):
+
+    if op == "potencia":
+        params = [0.9, 0, 948.45, 1.1, 1.37, 1.23, 0.98, 0.7, 2478]
+    elif op == "torque":
+        params = [0.95, 7.31, 1048, 1.15, 1.37, 1.15, 0.98, 0.75, 2484.6]
 
     pdc, deltaT, tres, presp1, compexo, expexpo, fii, fii_gas, digitar_c = params
 
@@ -28,10 +33,7 @@ def simulacao(params, op="", printTable=0):
     tempo = 4                   # Tabelado
     x = tempo/2                 # Tabelado
     taxa_compressao = 10.3      # Tabelado
-    if op == "potencia":
-        rotacao = 5800
-    else:
-        rotacao = 3950
+    rotacao = 5800
     cilindrada = 1800*1e-6      # Tabelado
 
     fuel = {"tipo": "gasolina", "alfa": 0.9}
@@ -223,49 +225,12 @@ def simulacao(params, op="", printTable=0):
     resultados["cec"] = resultados["cc"]*3600/resultados["potencia_efetiva"]["arques"]
 
     # %%        Resultados Finais
-
-    ref_pe = referencia["potencia_efetiva"]
+    
     res_pe = resultados["potencia_efetiva"]["arques"]/0.7351    # Em HP
-
-    ref_tq = referencia["torque"]
     res_tq = resultados["torque"]
 
-    if op == "potencia":
-        table = [["", "Referência", "Resultado", "Desvio"], 
-                 ["WE [HP]", ref_pe, res_pe, round((res_pe-ref_pe)*100/ref_pe, 3)],
-                 ["Delta U3", 0, round(delta_u3, 3), round(delta_u3, 3)]]
-        if printTable == 1:
-            print("\n" + tabulate(table, headers='firstrow'))
-        desvio_potencia = abs((res_pe-ref_pe)*100/ref_pe) + abs(delta_u3)
-        return desvio_potencia
-    else:
-        table = [["", "Referência", "Resultado", "Desvio"], 
-                 ["Torque [N*m]", ref_tq, res_tq, round((res_tq-ref_tq)*100/ref_tq, 3)],
-                 ["Delta U3", 0, round(delta_u3, 3), round(delta_u3, 3)]]
-        if printTable == 1:
-            print("\n" + tabulate(table, headers='firstrow'))
-        desvio_torque = abs((res_tq-ref_tq)*100/ref_tq) + abs(delta_u3)
-        return desvio_torque
+    return res_pe, res_tq, resultados["rendimento_ter"], resultados["cec"]
 
-####### Ajuste de potência
-
-#x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
-#bounds = ((0.7, 0.9), (0, 20), (750, 1050), (1.1, 1.25), (1.3, 1.37), (1.23, 1.3), (0.92, 0.98), (0.7, 0.9), (2200, 2800))
-#minimizer_kwargs = dict(method="L-BFGS-B", bounds=bounds)
-#result = op.basinhopping(simulacao, x0, minimizer_kwargs=minimizer_kwargs)
-#print(result)
-
-params = [0.85, 4.00, 932.21, 1.1, 1.36, 1.15, 0.96, 0.7, 2455.46] # Resultado mais zerado porém mais fora do range
-params = [0.9, 0, 948.45, 1.1, 1.37, 1.23, 0.98, 0.7, 2478]
-simulacao(params, op="potencia", printTable=1)
-
-####### Ajuste de torque
-
-#x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
-#bounds = ((0.65, 0.9), (0, 20), (750, 1050), (1.1, 1.25), (1.3, 1.37), (1.15, 1.3), (0.92, 0.98), (0.75, 0.9), (2200, 3000))
-#minimizer_kwargs = dict(method="L-BFGS-B", bounds=bounds)
-#result = op.basinhopping(simulacao, x0, minimizer_kwargs=minimizer_kwargs)
-#print(result)
-
-params = [0.9, 1.48, 963.91, 1.1, 1.37, 1.15, 0.97, 0.76, 2468.89]
-simulacao(params, op="torque", printTable=1)
+# Variação de temperatura e pressão atmosférica
+simulacao(op="potencia", printTable=0)
+simulacao(op="torque", printTable=0)
