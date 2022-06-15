@@ -2,14 +2,11 @@
 #   - Leonardo Rossi Leão
 #   - Matheus Meirelles Onofre Martins
 
-from cProfile import label
-from matplotlib import pyplot as plt
-from scipy import optimize as op
-import numpy as np
+from tabulate import tabulate
 
 # Audi A4 1.8
 
-def simulacao(tamb, pamb, op="", printTable=0):
+def simulacao(op="", printTable=0):
 
     if op == "potencia":
         params = [0.9, 0, 948.45, 1.1, 1.37, 1.23, 0.98, 0.7, 2478]
@@ -40,7 +37,7 @@ def simulacao(tamb, pamb, op="", printTable=0):
         rotacao = 3950
     cilindrada = 1800*1e-6      # Tabelado
 
-    fuel = {"tipo": "gasolina", "alfa": 0.9}
+    fuel = {"tipo": "etanol", "alfa": 0.9}
     h2_co = 0.45
 
     if fuel["tipo"] == "gasolina":
@@ -78,8 +75,8 @@ def simulacao(tamb, pamb, op="", printTable=0):
     # %%        Passo 1: Admissao
 
     admissao = {
-        "Tamb": tamb,                # Temperatura ambiente
-        "pamb": pamb,                # Pressão ambiente
+        "Tamb": 298,                 # Temperatura ambiente
+        "pamb": 1.013,               # Pressão ambiente
         "pdc": pdc,                  # Perda de carga, varia entre: 0.8 a 0.9
         "deltaT": deltaT,            # Variacao de temperatura, entre 0 a 20ºC
         "tres": tres,                # , entre 900 e 1000 K
@@ -230,89 +227,31 @@ def simulacao(tamb, pamb, op="", printTable=0):
 
     # %%        Resultados Finais
 
+    ref_pe = referencia["potencia_efetiva"]
     res_pe = resultados["potencia_efetiva"]["arques"]/0.7351    # Em HP
+
+    ref_tq = referencia["torque"]
     res_tq = resultados["torque"]
 
-    return res_pe, res_tq, resultados["rendimento_ter"], resultados["cec"]
+    if op == "potencia":
+        table = [["", "Referência", "Resultado", "Desvio"], 
+                 ["WE [HP]", ref_pe, res_pe, round((res_pe-ref_pe)*100/ref_pe, 3)],
+                 ["Delta U3", 0, round(delta_u3, 3), round(delta_u3, 3)]]
+        if printTable == 1:
+            print("\n" + tabulate(table, headers='firstrow'))
+        desvio_potencia = abs((res_pe-ref_pe)*100/ref_pe) + abs(delta_u3)
+        return desvio_potencia
+    else:
+        table = [["", "Referência", "Resultado", "Desvio"], 
+                 ["Torque [N*m]", ref_tq, res_tq, round((res_tq-ref_tq)*100/ref_tq, 3)],
+                 ["Delta U3", 0, round(delta_u3, 3), round(delta_u3, 3)]]
+        if printTable == 1:
+            print("\n" + tabulate(table, headers='firstrow'))
+        desvio_torque = abs((res_tq-ref_tq)*100/ref_tq) + abs(delta_u3)
+        return desvio_torque
 
-def paraPorcentagem(lista):
-    y0 = lista[0]
-    for i in range(len(lista)):
-        lista[i] = (lista[i]-y0)*100/y0
-    return lista
+# Condições de potência máxima
+simulacao(op="potencia", printTable=1)
 
-# Variação de temperatura e pressão atmosférica para potencia
-
-range_tamb = np.arange(250, 350, 0.1)
-potencia, torque, rendTermico, cec = [], [], [], []
-for tamb in range_tamb:
-    p, t, r, c = simulacao(tamb, 1.013, op="potencia", printTable=0)
-    potencia.append(p); torque.append(t); rendTermico.append(r); cec.append(c)
-
-fig, ax = plt.subplots(figsize=(8, 5))
-ln1 = ax.plot(range_tamb, paraPorcentagem(potencia), label="Potência Efetiva")
-ln2 = ax.plot(range_tamb, paraPorcentagem(rendTermico), label="Rendimento Térmico")
-ln3 = ax.plot(range_tamb, paraPorcentagem(cec), label="CEC")
-lns = ln1 + ln2 + ln3
-labs = [l.get_label() for l in lns]
-plt.legend(labs)
-plt.grid(linestyle="--")
-plt.ylabel("Variação [%]")
-plt.xlabel("Temperatura ambiente [°C]")
-plt.show()
-
-range_pamb = np.arange(900, 1100, 0.1)
-potencia, torque, rendTermico, cec = [], [], [], []
-for pamb in range_pamb:
-    p, t, r, c = simulacao(298, pamb, op="potencia", printTable=0)
-    potencia.append(p); torque.append(t); rendTermico.append(r); cec.append(c)
-
-fig, ax = plt.subplots(figsize=(8, 5))
-ln1 = ax.plot(range_pamb, paraPorcentagem(potencia), label="Potência Efetiva")
-ln2 = ax.plot(range_pamb, paraPorcentagem(rendTermico), label="Rendimento Térmico")
-ln3 = ax.plot(range_pamb, paraPorcentagem(cec), label="CEC")
-lns = ln1 + ln2 + ln3
-labs = [l.get_label() for l in lns]
-plt.legend(labs)
-plt.grid(linestyle="--")
-plt.ylabel("Variação [%]")
-plt.xlabel("Pressão Atmosférica [kPa]")
-plt.show()
-
-# Variação de temperatura e pressão atmosférica para torque
-
-range_tamb = np.arange(250, 350, 0.1)
-potencia, torque, rendTermico, cec = [], [], [], []
-for tamb in range_tamb:
-    p, t, r, c = simulacao(tamb, 1.013, op="torque", printTable=0)
-    potencia.append(p); torque.append(t); rendTermico.append(r); cec.append(c)
-
-fig, ax = plt.subplots(figsize=(8, 5))
-ln1 = ax.plot(range_tamb, paraPorcentagem(torque), label="Potência Efetiva")
-ln2 = ax.plot(range_tamb, paraPorcentagem(rendTermico), label="Rendimento Térmico")
-ln3 = ax.plot(range_tamb, paraPorcentagem(cec), label="CEC")
-lns = ln1 + ln2 + ln3
-labs = [l.get_label() for l in lns]
-plt.legend(labs)
-plt.grid(linestyle="--")
-plt.ylabel("Variação [%]")
-plt.xlabel("Temperatura ambiente [°C]")
-plt.show()
-
-range_pamb = np.arange(900, 1100, 0.1)
-potencia, torque, rendTermico, cec = [], [], [], []
-for pamb in range_pamb:
-    p, t, r, c = simulacao(298, pamb, op="torque", printTable=0)
-    potencia.append(p); torque.append(t); rendTermico.append(r); cec.append(c)
-
-fig, ax = plt.subplots(figsize=(8, 5))
-ln1 = ax.plot(range_pamb, paraPorcentagem(torque), label="Potência Efetiva")
-ln2 = ax.plot(range_pamb, paraPorcentagem(rendTermico), label="Rendimento Térmico")
-ln3 = ax.plot(range_pamb, paraPorcentagem(cec), label="CEC")
-lns = ln1 + ln2 + ln3
-labs = [l.get_label() for l in lns]
-plt.legend(labs)
-plt.grid(linestyle="--")
-plt.ylabel("Variação [%]")
-plt.xlabel("Pressão Atmosférica [kPa]")
-plt.show()
+# Condições de torque máximo
+simulacao(op="torque", printTable=1)
