@@ -238,7 +238,7 @@ def simulacao(params, op="", printTable=0):
         return desvio_potencia
     else:
         table = [["", "Referência", "Resultado", "Desvio"], 
-                 ["WE [HP]", ref_tq, res_tq, round((res_tq-ref_tq)*100/ref_tq, 3)],
+                 ["Torque [N*m]", ref_tq, res_tq, round((res_tq-ref_tq)*100/ref_tq, 3)],
                  ["Delta U3", 0, round(delta_u3, 3), round(delta_u3, 3)]]
         if printTable == 1:
             print("\n" + tabulate(table, headers='firstrow'))
@@ -246,8 +246,6 @@ def simulacao(params, op="", printTable=0):
         return desvio_torque
 
 ####### Ajuste de potência
-
-print("Ajuste de potência:")
 
 #x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
 #bounds = ((0.7, 0.9), (0, 20), (750, 1050), (1.1, 1.25), (1.3, 1.37), (1.23, 1.3), (0.92, 0.98), (0.7, 0.9), (2200, 2800))
@@ -261,7 +259,6 @@ simulacao(params, op="potencia", printTable=1)
 
 ####### Ajuste de torque
 
-print("Ajuste de torque")
 
 #x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
 #bounds = ((0.65, 0.9), (0, 20), (750, 1050), (1.1, 1.25), (1.3, 1.37), (1.23, 1.3), (0.92, 0.98), (0.7, 0.9), (2200, 2800))
