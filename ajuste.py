@@ -9,7 +9,7 @@ import time
 
 # Audi A4 1.8
 
-def simulacao(params):
+def simulacao(params, op=""):
 
     pdc, deltaT, tres, presp1, compexo, expexpo, fii, fii_gas, digitar_c = params
 
@@ -228,34 +228,36 @@ def simulacao(params):
     ref_tq = referencia["torque"]
     res_tq = resultados["torque"]
 
-    desvio_potencia = abs((res_pe-ref_pe)*100/ref_pe) + abs(delta_u3)
-    desvio_torque = abs((res_tq-ref_tq)*100/ref_tq) + abs(delta_u3)
-    return desvio_torque
+    if op == "potencia":
+        desvio_potencia = abs((res_pe-ref_pe)*100/ref_pe) + abs(delta_u3)
+        return desvio_potencia
+    else:
+        desvio_torque = abs((res_tq-ref_tq)*100/ref_tq) + abs(delta_u3)
+        return desvio_torque
 
 ####### Ajuste de potência
 
 print("Ajuste de potência:")
 
-#x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2442.6]
-#bnds = ((0.7, 0.9), (0, 20), (800, 1000), (1.0, 1.25), (1.1, 1.37), (1.23, 1.3), (0.92, 0.97), (0.75, 0.9), (2200, 2700))
-#result = op.minimize(simulacao, x0, bounds=bnds)
+#x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
+#bounds = ((0.7, 0.9), (0, 20), (750, 1050), (1.1, 1.25), (1.3, 1.37), (1.23, 1.3), (0.92, 0.98), (0.7, 0.9), (2200, 2800))
+#minimizer_kwargs = dict(method="L-BFGS-B", bounds=bounds)
+#result = op.basinhopping(simulacao, x0, minimizer_kwargs=minimizer_kwargs)
 #print(result)
 
-# Valor ótimo: mas pres/p1 = 1, validar isso com o professor
-params = [0.9, 0, 900, 1, 1.35, 1.23, 0.97, 0.75, 2442.6]
-print("\t", simulacao(params))
-
-# Valor bom
-params = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2442.6]
-print("\t", simulacao(params))
+params = [0.85, 4.00, 932.21, 1.1, 1.36, 1.15, 0.96, 0.7, 2455.46]
+params = [0.9, 0, 948.45, 1.1, 1.37, 1.23, 0.98, 0.7, 2478]
+print("\t", simulacao(params, op="potencia"))
 
 ####### Ajuste de torque
 
 print("Ajuste de torque")
 
-x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
-bnds = ((0.7, 0.91), (0, 20), (850, 1000), (1.1, 1.25), (1.3, 1.37), (1.23, 1.3), (0.92, 0.97), (0.75, 0.9), (2200, 2800))
-result = op.minimize(simulacao, x0, bounds=bnds)
-print(result)
+#x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
+#bounds = ((0.65, 0.95), (0, 20), (750, 1050), (1.1, 1.25), (1.3, 1.37), (1.15, 1.3), (0.92, 0.98), (0.7, 0.9), (2200, 2800))
+#minimizer_kwargs = dict(method="L-BFGS-B", bounds=bounds)
+#result = op.basinhopping(simulacao, x0, minimizer_kwargs=minimizer_kwargs)
+#print(result)
 
-params = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2442.6]
+params = [0.95, 7.31, 1048, 1.15, 1.37, 1.15, 0.98, 0.75, 2484.6]
+print("\t", simulacao(params, op="torque"))
