@@ -8,7 +8,7 @@ import numpy as np
 
 # Audi A4 1.8
 
-def simulacao(params, op="", printTable=0):
+def simulacao(params, op, printTable=0):
 
     pdc, deltaT, tres, presp1, compexo, expexpo, fii, fii_gas, digitar_c = params
 
@@ -80,10 +80,11 @@ def simulacao(params, op="", printTable=0):
         "pres/p1": presp1            # , entre 1.1 a 1.25
     }
 
-    admissao["pres"] = admissao["pamb"]*admissao["pres/p1"]
     admissao["epson"] = taxa_compressao
 
     resultados = {"p1": admissao["pamb"]*admissao["pdc"]}
+    admissao["pres"] = resultados["p1"]*admissao["pres/p1"]
+
     resultados["efe"] = ((admissao["Tamb"] + admissao["deltaT"])/admissao["tres"])*(admissao["pres"]/(admissao["epson"]*resultados["p1"] - admissao["pres"]))
     resultados["nres"] = comb_coef["reagentes"]*resultados["efe"]
     resultados["t1"]  = (admissao["Tamb"] + admissao["deltaT"] + resultados["efe"]*admissao["tres"])/(1 + resultados["efe"])
@@ -230,6 +231,8 @@ def simulacao(params, op="", printTable=0):
     ref_tq = referencia["torque"]
     res_tq = resultados["torque"]
 
+    print(resultados)
+
     if op == "potencia":
         table = [["", "Referência", "Resultado", "Desvio"], 
                  ["WE [HP]", ref_pe, res_pe, round((res_pe-ref_pe)*100/ref_pe, 3)],
@@ -250,22 +253,41 @@ def simulacao(params, op="", printTable=0):
 ####### Ajuste de potência
 
 #x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
-#bounds = ((0.7, 0.9), (0, 20), (750, 1050), (1.1, 1.25), (1.3, 1.37), (1.23, 1.3), (0.92, 0.98), (0.7, 0.9), (2200, 2800))
+#bounds = ((0.8, 0.9), (0, 20), (900, 1000), (1.1, 1.25), (1.3, 1.37), (1.23, 1.30), (0.92, 0.97), (0.75, 0.90), (2200, 2800))
 #minimizer_kwargs = dict(method="L-BFGS-B", bounds=bounds)
-#result = op.basinhopping(simulacao, x0, minimizer_kwargs=minimizer_kwargs)
-#print(result)
 
-params = [0.85, 4.00, 932.21, 1.1, 1.36, 1.15, 0.96, 0.7, 2455.46] # Resultado mais zerado porém mais fora do range
-params = [0.9, 0, 948.45, 1.1, 1.37, 1.23, 0.98, 0.7, 2478]
+#menorErro = 10e6
+#menorResult = None
+#for _ in range(10):
+#    result = op.basinhopping(simulacao, x0, minimizer_kwargs=minimizer_kwargs)
+#    if result["fun"] < menorErro:
+#        menorErro = result["fun"]
+#        menorResult = result
+#        print(menorErro)
+#
+#print(menorResult)
+
+params = [8.99958339e-01, 2.14306034e-04, 9.27432885e+02, 1.10087947e+00, 1.35328991e+00, 1.23002448e+00, 9.70000000e-01, 7.51142086e-01, 2.44785671e+03]
 simulacao(params, op="potencia", printTable=1)
 
 ####### Ajuste de torque
 
 #x0 = [0.9, 0, 900, 1.1, 1.3, 1.23, 0.97, 0.75, 2712]
-#bounds = ((0.65, 0.9), (0, 20), (750, 1050), (1.1, 1.25), (1.3, 1.37), (1.15, 1.3), (0.92, 0.98), (0.75, 0.9), (2200, 3000))
+#bounds = ((0.8, 0.9), (0, 20), (900, 1000), (1.1, 1.25), (1.3, 1.37), (1.23, 1.30), (0.92, 0.97), (0.75, 0.90), (2200, 2800))
+#bounds = ((0.8, 0.95), (0, 20), (880, 1000), (1.05, 1.25), (1.3, 1.41), (1.23, 1.31), (0.92, 0.98), (0.73, 0.90), (2200, 2800))
 #minimizer_kwargs = dict(method="L-BFGS-B", bounds=bounds)
-#result = op.basinhopping(simulacao, x0, minimizer_kwargs=minimizer_kwargs)
-#print(result)
+#menorErro = 10e6
+#menorResult = None
+#for _ in range(30):
+#    result = op.basinhopping(simulacao, x0, minimizer_kwargs=minimizer_kwargs)
+#    if result["fun"] < menorErro:
+#        menorErro = result["fun"]
+#        menorResult = result
+#        print(menorErro)
+#
+#print(menorResult)
 
-params = [0.9, 1.48, 963.91, 1.1, 1.37, 1.15, 0.97, 0.76, 2468.89]
+params = [9.49814870e-01, 6.94083943e-07, 9.39014864e+02, 1.05002881e+00,
+       1.42523160e+00, 1.23025818e+00, 9.79820031e-01, 7.40000652e-01,
+       2.53856166e+03]
 simulacao(params, op="torque", printTable=1)
