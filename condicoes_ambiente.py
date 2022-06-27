@@ -2,7 +2,6 @@
 #   - Leonardo Rossi Leão
 #   - Matheus Meirelles Onofre Martins
 
-from cProfile import label
 from matplotlib import pyplot as plt
 from scipy import optimize as op
 import numpy as np
@@ -12,15 +11,15 @@ import numpy as np
 def simulacao(tamb, pamb, op="", printTable=0):
 
     if op == "potencia":
-        params = [0.9, 0, 948.45, 1.1, 1.37, 1.23, 0.98, 0.7, 2478]
-    elif op == "torque":
-        params = [0.9, 1.48, 963.91, 1.1, 1.37, 1.15, 0.97, 0.76, 2468.89]
+        params = [0.866288841, 7.06979930, 952.584869, 1.15104888, 1.36923106, 1.25428223, 0.920010780, 0.899922327, 2458.76386]
+    else:
+        params = [0.9, 8.54308881, 939.255822, 1.15364973, 1.32752461, 1.24861101, 0.97, 0.803650162, 2414.5877]
 
     pdc, deltaT, tres, presp1, compexo, expexpo, fii, fii_gas, digitar_c = params
 
     referencia = {
-        "potencia_efetiva": 123,        # HP
-        "torque": 173                   # N*m
+        "potencia_efetiva": 56.1/1.014,        # HP
+        "torque": 80.41453                   # N*m
     }
 
     PCI = {
@@ -28,19 +27,19 @@ def simulacao(tamb, pamb, op="", printTable=0):
         "etanol": 6.75*4.1868                 # MJ/kg
     }
 
-    num_cilindros = 4           # Tabelada
-    diametro = 0.081            # Tabelado
-    curso = 0.0864              # Tabelado
-    tempo = 4                   # Tabelado
-    x = tempo/2                 # Tabelado
-    taxa_compressao = 10.3      # Tabelado
+    num_cilindros = 4
+    diametro = 0.076                   # m
+    curso = 0.0548                      # m
+    tempo = 4
+    x = tempo/2
+    taxa_compressao = 9.5
     if op == "potencia":
-        rotacao = 5800
+        rotacao = 6000
     else:
-        rotacao = 3950
-    cilindrada = 1800*1e-6      # Tabelado
+        rotacao = 3250
+    cilindrada = 994*1e-6
 
-    fuel = {"tipo": "gasolina", "alfa": 0.9}
+    fuel = {"tipo": "etanol", "alfa": 0.9}
     h2_co = 0.45
 
     if fuel["tipo"] == "gasolina":
@@ -78,24 +77,22 @@ def simulacao(tamb, pamb, op="", printTable=0):
     # %%        Passo 1: Admissao
 
     admissao = {
-        "Tamb": tamb,                # Temperatura ambiente
-        "pamb": pamb,                # Pressão ambiente
-        "pdc": pdc,                  # Perda de carga, varia entre: 0.8 a 0.9
+        "Tamb": tamb,           # Temperatura ambiente
+        "pamb": pamb,         # Pressão ambiente
+        "pdc": pdc,             # Perda de carga, varia entre: 0.8 a 0.9
         "deltaT": deltaT,            # Variacao de temperatura, entre 0 a 20ºC
-        "tres": tres,                # , entre 900 e 1000 K
-        "pres/p1": presp1            # , entre 1.1 a 1.25
+        "tres": tres,            # , entre 900 e 1000 K
+        "pres/p1": presp1         # , entre 1.1 a 1.25
     }
 
-    admissao["pres"] = admissao["pamb"]*admissao["pres/p1"]
+    resultados = {"p1": admissao["pamb"]*admissao["pdc"]}       
+    admissao["pres"] = resultados["p1"]*admissao["pres/p1"]
     admissao["epson"] = taxa_compressao
 
-    resultados = {"p1": admissao["pamb"]*admissao["pdc"]}
     resultados["efe"] = ((admissao["Tamb"] + admissao["deltaT"])/admissao["tres"])*(admissao["pres"]/(admissao["epson"]*resultados["p1"] - admissao["pres"]))
     resultados["nres"] = comb_coef["reagentes"]*resultados["efe"]
     resultados["t1"]  = (admissao["Tamb"] + admissao["deltaT"] + resultados["efe"]*admissao["tres"])/(1 + resultados["efe"])
     resultados["rendimento_vol"] = (resultados["p1"]/admissao["pamb"])*(admissao["epson"]/(admissao["epson"]-1))*(admissao["Tamb"]/(resultados["t1"]*(1+resultados["efe"])))
-
-
     # %%        Passo 3: Compressao
 
     compressao = {"expo": compexo}        # Varia entre 1.3 e 1.37 
@@ -112,6 +109,7 @@ def simulacao(tamb, pamb, op="", printTable=0):
         "N2": 0.03869+0.01969*(resultados["t2_c"])+0.000003708*(resultados["t2_c"]**2)-0.00000000055124*(resultados["t2_c"]**3),
         "O2": -0.133567+0.02181*(resultados["t2_c"])+0.00000355345*(resultados["t2_c"]**2)-0.00000000049*(resultados["t2_c"]**3),
     }
+
 
     ei = compressao["ei"]
     compressao["gases"] = comb_coef["CO2"] + comb_coef["CO"] + comb_coef["H2O"] + comb_coef["H2"] + comb_coef["N2"]
@@ -228,9 +226,11 @@ def simulacao(tamb, pamb, op="", printTable=0):
     resultados["cc"] = resultados["potencia_efetiva"]["arques"]/combustao["pci"]/resultados["rendimento_ter"]
     resultados["cec"] = resultados["cc"]*3600/resultados["potencia_efetiva"]["arques"]
 
+    #print(resultados)
     # %%        Resultados Finais
-
+    ref_pe = referencia["potencia_efetiva"]
     res_pe = resultados["potencia_efetiva"]["arques"]/0.7351    # Em HP
+    ref_tq = referencia["torque"]
     res_tq = resultados["torque"]
 
     return res_pe, res_tq, resultados["rendimento_ter"], resultados["cec"]
@@ -288,7 +288,7 @@ for tamb in range_tamb:
     potencia.append(p); torque.append(t); rendTermico.append(r); cec.append(c)
 
 fig, ax = plt.subplots(figsize=(8, 5))
-ln1 = ax.plot(range_tamb, paraPorcentagem(torque), label="Potência Efetiva")
+ln1 = ax.plot(range_tamb, paraPorcentagem(torque), label="Torque")
 ln2 = ax.plot(range_tamb, paraPorcentagem(rendTermico), label="Rendimento Térmico")
 ln3 = ax.plot(range_tamb, paraPorcentagem(cec), label="CEC")
 lns = ln1 + ln2 + ln3
@@ -306,7 +306,7 @@ for pamb in range_pamb:
     potencia.append(p); torque.append(t); rendTermico.append(r); cec.append(c)
 
 fig, ax = plt.subplots(figsize=(8, 5))
-ln1 = ax.plot(range_pamb, paraPorcentagem(torque), label="Potência Efetiva")
+ln1 = ax.plot(range_pamb, paraPorcentagem(torque), label="Torque")
 ln2 = ax.plot(range_pamb, paraPorcentagem(rendTermico), label="Rendimento Térmico")
 ln3 = ax.plot(range_pamb, paraPorcentagem(cec), label="CEC")
 lns = ln1 + ln2 + ln3

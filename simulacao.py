@@ -3,7 +3,6 @@
 #   - Matheus Meirelles Onofre Martins
 
 from tabulate import tabulate
-
 # %%      Dados base para cálculos
 
 referencia = {
@@ -65,10 +64,10 @@ comb_coef["ar"] = (comb_coef["O2"] + comb_coef["N2"])/fuel["peso"]
 admissao = {
     "Tamb": 298,           # Temperatura ambiente
     "pamb": 1.013,         # Pressão ambiente
-    "pdc": 0.9,             # Perda de carga, varia entre: 0.8 a 0.9
-    "deltaT": 5,            # Variacao de temperatura, entre 0 a 20ºC
-    "tres": 900,            # , entre 900 e 1000 K
-    "pres/p1": 1.10         # , entre 1.1 a 1.25
+    "pdc": 8.75049507e-01,             # Perda de carga, varia entre: 0.8 a 0.9
+    "deltaT": 1.03929247e-07,            # Variacao de temperatura, entre 0 a 20ºC
+    "tres": 9.02759323e+02,            # , entre 900 e 1000 K
+    "pres/p1": 1.10000649e+00         # , entre 1.1 a 1.25
 }
 
 admissao["pres"] = admissao["pamb"]*admissao["pres/p1"]
@@ -83,7 +82,7 @@ resultados["rendimento_vol"] = (resultados["p1"]/admissao["pamb"])*(admissao["ep
 
 # %%        Passo 3: Compressao
 
-compressao = {"expo": 1.3}        # Varia entre 1.3 e 1.37 
+compressao = {"expo": 1.36845508e+00}        # Varia entre 1.3 e 1.37 
 
 resultados["t2"] = resultados["t1"]*(admissao["epson"]**(compressao["expo"] - 1))
 resultados["t2_c"] = resultados["t2"] - 273.15
@@ -119,7 +118,7 @@ param1 = (combustao["beta"]*(combustao["pci"] - combustao["delcl"]))/(comb_coef[
 param2 = (combustao["u2"] + (resultados["efe"]*combustao["ulin2"]))/(1 + resultados["efe"])
 u3 = (param1 + param2)/combustao["mi"]
 
-digitar_c = 2375.05664866649        # Validar o que é esta merda
+digitar_c = 2.50693306e+03        # Validar o que é esta merda
 resultados["t3"] = digitar_c + 273.15
 resultados["p3"] = (combustao["mi"]*resultados["p2"]*resultados["t3"])/resultados["t2"]
 resultados["pmax"] = 0.85*resultados["p3"]
@@ -143,7 +142,7 @@ delta_u3 = u3 - combustao["ei"]["gases"]
 
 # %%        Passo 5: Expansao
 
-expansao = {"expo": 1.23}       # Varia de 1.23 a 1.30
+expansao = {"expo": 1.23005714e+00}       # Varia de 1.23 a 1.30
 expansao["tx_compr"] = taxa_compressao
 
 resultados["p4"] = resultados["p3"]*(1/expansao["tx_compr"]**expansao["expo"])
@@ -152,8 +151,8 @@ resultados["t4"] = resultados["t3"]*(1/expansao["tx_compr"]**(expansao["expo"]-1
 # %%        Passo 6: Pressao media indicada [bar]
 
 passo6 = {
-    "fii": 0.97,                # Varia de 0.92 a 0.97
-    "fii_gas": 0.75             # Varia de 0.75 a 0.90
+    "fii": 9.69971950e-01,                # Varia de 0.92 a 0.97
+    "fii_gas": 8.21026206e-01             # Varia de 0.75 a 0.90
 }
 
 fator_1 = resultados["p1"]*(admissao["epson"]**compressao["expo"])/(admissao["epson"]-1)
